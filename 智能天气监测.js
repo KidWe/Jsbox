@@ -1,8 +1,10 @@
-/**erots
-id: 5f88ff8db876e626d110d509
-build: 8
-source: d881c33bf65844de8af82815c561399b
+/** 天气监控 
+1. 实时天气监控
+2. 未来天气预测
+3. 恶劣天气预警
 */
+
+
 const hotSearchApi =
   "https://m.weibo.cn/api/container/getIndex?containerid=106003%26filter_type%3Drealtimehot";
 const family = $widget.family;
@@ -475,11 +477,6 @@ async function widgetInit() {
     }
   });
 }
-
-//if ($env.app == $app.env) {
-//  inAppShow();
-//  inAppInit();
-//} else widgetInit();
 
 widgetInit()
 
