@@ -15,12 +15,9 @@ async function getHotSearch() {
   if (requestFailed(resp)) {
       return JSON.parse(cache)
     }
-    
+
   let data = resp.data.data;
-  //    if (data.errmsg) {
-  //        alert(data.errmsg);
-  //        return;
-  //    }
+
   let hotCards = data.cards[0].card_group;
   let upTime = data.cardlistInfo.starttime;
   //console.log(upTime)
@@ -28,6 +25,62 @@ async function getHotSearch() {
   $cache.set("hot",c)
   return c
 }
+
+
+// 定义城市
+let cityInfo = {
+    name: '', //城市名
+    tmp: '', //气温
+    aqi: '', //空气质量指数
+    qlty: '', //空气质量
+    cond_txt: '', //实况天气状况
+    cond_code: '' //实况天气code
+}
+
+
+//  获取位置
+function getLocal() { 
+    $location.fetch({
+        handler: function(resp) {
+            let lat = resp.lat
+            let lng = resp.lng
+
+            getWeather(lat, lng)
+        }
+    })
+}
+
+
+//  获取空气质量相关
+function getAir(latt, lngg) {
+    $http.get({
+        url: "https://free-api.heweather.com/s6/air?key=f558ebde23d14301b98973697083949e&location=" +
+            latt + "," + lngg + "&lang=zh&unit=m",
+
+        handler: function(resp) {
+            if (resp.data.HeWeather6[0].status == 'ok') {
+                let data = resp.data.HeWeather6[0]
+                cityInfo.aqi = data.air_now_city.aqi //空气质量指数
+                cityInfo.qlty = data.air_now_city.qlty //空气质量
+                cityInfo.time = new Date().getTime()
+                showView()
+
+                $cache.setAsync({
+                    key: "Info",
+                    value: cityInfo,
+                    handler: function(object) {
+
+                    }
+                })
+            } else {
+                someError(resp.data.HeWeather6[0].status)
+            }
+        }
+    })
+}
+
+
+
 
 function list() {
   return {
@@ -151,332 +204,7 @@ const template = {
   ]
 };
 
-async function inAppInit() {
-  let data = await getHotSearch();
-  let hot = data.hotCards;
-  $("hotList").data = [];
-  var temp = [];
-  for (let i = 0; i < hot.length; i++) {
-    let icon = {};
-    let prefix = "";
-    let num = i;
-    if (i == 0) num = "🏆";
-    else if (i == 1) num = "🥇";
-    else if (i == 2) num = "🥈";
-    else if (i == 3) num = "🥉";
-    prefix = num + "、";
-    //console.log(hot[i].icon)
-    if (hot[i].icon) {
-      if (hot[i].icon.indexOf("hot") > 0) {
-        icon.hidden = false;
-        icon.text = "热";
-        icon.bgcolor = $rgb(254, 158, 25);
-      } else if (hot[i].icon.indexOf("new") > 0) {
-        icon.hidden = false;
-        icon.text = "新";
-        icon.bgcolor = $rgb(254, 73, 95);
-      } else if (hot[i].icon.indexOf("recom") > 0) {
-        icon.hidden = false;
-        icon.text = "荐";
-        icon.bgcolor = $rgb(76, 173, 254);
-      } else if (hot[i].icon.indexOf("fei") > 0) {
-        icon.hidden = false;
-        icon.text = "沸";
-        icon.bgcolor = $rgb(247, 98, 0);
-      }
-    }
 
-    temp = temp.concat({
-      hotTitle: {
-        text: prefix + hot[i].desc,
-        info: hot[i].scheme,
-        link:
-          "http://s.weibo.com/weibo?q=%23" +
-          encodeURI(hot[i].desc) +
-          "%23&Refer=top"
-      },
-      icon: icon
-    });
-  }
-  $("hotList").data = temp;
-  //$ui.toast(timeConvert(data.pageInfo.starttime) + "  更新", 0.6);
-}
-function inAppShow() {
-  $ui.render({
-    props: {
-      title: "微博热点",
-      id: "weibo",
-      type: "view"
-      //     navBarHidden: $app.env == $env.app ? false : true,
-      // //bgcolor:$color("black"),
-      //     navButtons: [
-      //         {
-      //         symbol: "lightbulb",
-      //         handler: () => {
-      //             readMe();
-      //         }
-      //         }
-      //     ]
-    },
-    views: [list()],
-    layout: $layout.fill
-  });
-}
-
-async function getTimeStamp(family){
-//  if(family==0) return "微博热搜"
-//  let url = "http://calendar.netcore.show/api/day/days?day="
-//  let date = new Date()
-//  let m = date.getMonth()+1
-//  let d = date.getDate()
-//  let y = date.getFullYear()
-//  
-//  url = url+y+"-"+m+"-"+d
-//  let resp = await $http.get(url)
-//  
-//  if (requestFailed(resp)) return "微博热搜"
-//  let lm = resp.data.data[0].calendarMonth.lunarMonthText
-//  let ld = resp.data.data[0].calendarDay.lunarDayText
-//  let timeStamp = lm+"月"+ld+"  "+date.toDateString().slice(4,10)
-////  console.log(timeStamp)
-//  timeStamp = "微博热搜                           " + timeStamp
-//  return timeStamp
-return "微博热搜"
-}
-
-function timeConvert() {
-  let date = new Date();
-  // Hours part from the timestamp
-  let hours = date.getHours();
-  // Minutes part from the timestamp
-  let minutes = "0" + date.getMinutes();
-  // Seconds part from the timestamp
-//  let seconds = "0" + date.getSeconds();
-//
-//  let year = date.getFullYear();
-//  let month = date.getMonth() + 1;
-//  let dateN = date.getDate();
-  // Will display time in 10:30:23 format
-  let formattedTime =
-    //year +
-    //"-" +
-    //month +
-    // "-" +
-    //dateN +
-    // "  " +
-    hours + ":" + minutes.substr(-2);
-  // +":" +
-  //seconds.substr(-2);
-  return formattedTime;
-}
-function requestFailed(resp) {
-  return (
-    resp == null || resp.response == null || resp.response.statusCode != 200
-  );
-}
-
-async function fetch() {
-  const cache = $file.read("bg.jpg")
-  let size = "500x500";
-  if (family == 1) size = "800x375";
-  let url = "https://source.unsplash.com/random/" + size + "/?dark";
-  const file = await $http.download(url);
-  console.log(file)
-  if (requestFailed(file)) {
-    return cache.image;
-  }
-  const image = file.data.image;
-  
-  if (image) {
-    $file.write({
-        data: file.data,
-        path: "bg.jpg"
-      })
-  }
-
-  return image;
-}
-
-function getGrid(family, data) {
-  if (family == 1)
-    return {
-      type: "vgrid",
-      props: {
-        columns: Array(2).fill({
-          flexible: {
-            minimum: 10,
-            maximum: Infinity
-          }
-          // spacing: 10,
-          // alignment: $widget.alignment.left
-        })
-        // spacing: 10,
-        // alignment: $widget.horizontalAlignment.leading
-      },
-      views: [
-        {
-          type: "vstack",
-          props: {
-            spacing: 8,
-            alignment: $widget.horizontalAlignment.leading,
-            offset: $point(-2, 7),
-            frame: {
-                        width: 145,
-                           
-                          }
-          },
-          views: data.slice(0, 5)
-        },
-        {
-          type: "vstack",
-          props: {
-            spacing: 8,
-            alignment: $widget.horizontalAlignment.leading,
-            offset: $point(-15, 7),
-            frame: {
-                width: 145,
-               
-              }
-            
-          },
-          views: data.slice(5, 10)
-        }
-      ]
-    };
-  else
-    return {
-      type: "vstack",
-      props: {
-        spacing: 8,
-        alignment: $widget.horizontalAlignment.leading,
-        offset: $point(0, 7),
-        frame: {
-                        width: 140,
-                       
-                      }
-      },
-      views: data.slice(0, 5)
-    };
-}
-
-async function widgetInit() {
-  let temp = [];
-  let data = await getHotSearch();
-  let hot = data.hotCards;
-  let upTime = data.upTime
-  let image = await fetch();
-  const date = new Date();
-  date.setMinutes(date.getMinutes(date) + 15);
-  let timeStamp = await getTimeStamp(family)
-  for (let i = 0; i < hot.length; i++) {
-    let prefix = "";
-    let num = i;
-    if (i == 0) num = "🏆";
-    else if (i == 1) num = "🥇";
-    else if (i == 2) num = "🥈";
-    else if (i == 3) num = "🥉";
-    else if (i == 4) num = "🏅";
-    else if (i == 5) num = "🎖";
-    else if (i == 6) num = "🎖";
-    else if (i == 7) num = "🎖";
-    else if (i == 8) num = "🎖";
-    else if (i == 9) num = "🎖";
-    prefix = num + " ";
-
-    temp = temp.concat({
-      type: "text",
-      props: {
-        text: prefix + hot[i].desc,
-        font: $font(11),
-        color: $color("white"),
-        offset: $point(7, 0),
-        lineLimit: 1,
-        link:
-          "http://s.weibo.com/weibo?q=%23" +
-          encodeURI(hot[i].desc) +
-          "%23&Refer=top"
-      }
-    });
-  }
-  $widget.setTimeline({
-    policy: {
-      afterDate: date
-    },
-    render: ctx => {
-      return {
-        type: "zstack",
-        props: {
-          alignment: $widget.alignment.center,
-          widgetURL: "jsbox://run?name=" + encodeURI("不用微博") + ".js"
-        },
-        views: [
-          {
-            type: "image",
-            props: {
-              image: image,
-              resizable: true,
-              scaledToFit: false,
-              opacity: 0.5,
-              background: {
-                  type: "gradient",
-                  props: {
-                    colors: [
-                      $color("#0d0116", "#22186"),
-                      $color("#4c444d", "#5d5d63"),
-                    ]
-                  }
-                }
-            }
-          },
-          {
-            type: "vstack",
-            props: {
-              spacing: 5,
-              alignment: $widget.horizontalAlignment.leading
-              // spacing: 10,
-              //alignment: $widget.verticalAlignment.left
-              //widgetURL: "jsbox://runjs?file=javbus.js"
-            },
-            views: [
-              {
-                type: "text",
-                props: {
-                  text: timeStamp,
-                  font: $font("bold", 15),
-                  color: $color("white"),
-                  frame: {
-                    alignment: $widget.alignment.leading,
-                    height: 18
-                  },
-                  offset: family==1?$point(15, 5):$point(10,5),
-                  
-                                      
-                                   
-                }
-              },
-              getGrid(family, temp),
-              {
-                type: "text",
-                props: {
-                  text: "更新时间:" + timeConvert(upTime),
-                  font: $font(8),
-                  color: $color("#7e8b8c"),
-                  frame: {
-                    maxWidth: Infinity,
-                    alignment: $widget.alignment.trailing
-                  },
-                  
-                  offset: $point(-10, 7),
-                  
-                }
-              }
-            ]
-          }
-        ]
-      };
-    }
-  });
-}
 
 widgetInit()
 
