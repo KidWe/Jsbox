@@ -80,131 +80,123 @@ function getAir(latt, lngg) {
 }
 
 
-
-
-function list() {
-  return {
-    type: "list",
-    props: {
-      id: "hotList",
-      template: template,
-      hidden: false,
-      rowHeight: 35,
-      bgcolor:
-        $app.env == $env.today
-          ? $color("clear")
-          : $device.isDarkMode
-          ? $color("black")
-          : $color("white"),
-      actions: [
-        {
-          title: "墨客",
-          color: $rgb(69, 134, 209),
-          handler: function (sender, indexPath) {
-            $cache.set("app", "moke");
-            let text = "";
-            text = /.、([\s\S]*)/g.exec(
-              sender.data[indexPath.row].hotTitle.text
-            )[1];
-            //              console.log(text)
-            $app.openURL("moke:///search/statuses?query=" + encodeURI(text));
-          }
+// 界面设计
+function showView() {
+    $ui.render({
+        props: {
+            title: cityInfo.name
         },
-        {
-          title: "微博",
-          color: $rgb(246, 22, 31), // default to gray
-          handler: function (sender, indexPath) {
-            //console.log(sender.data[indexPath.row].label.info);
-            $cache.set("app", "weibo");
-            $app.openURL(sender.data[indexPath.row].hotContent.info);
-          }
-        }
-      ]
-    },
-    layout: function (make, view) {
-      make.bottom.left.right.inset(0);
-      make.top.inset(0);
-    },
-    events: {
-      didSelect: function (sender, indexPath) {
-        let url = sender.data[indexPath.row].hotTitle.link;
-        console.log(url);
-        openSafari(url);
-      },
-      didLongPress: function (sender, indexPath, data) {
-        if ($app.env == $env.app || $app.widgetIndex !== -1) return;
-        $app.close();
-      },
-      pulled: function (sender) {
-        $("hotList").data = [];
-        inAppInit();
-        sender.endRefreshing();
-      }
-    }
-  };
+        views: [{
+            type: "list",
+            props: {
+                data: [{
+                    image: {
+                        src: 'assets/' + cityInfo.cond_code + '.png'
+                    },
+                    name: {
+                        text: cityInfo.name
+                    },
+                    tmp: {
+                        text: cityInfo.tmp + '°'
+                    },
+                    txt: {
+                        text: cityInfo.cond_txt
+                    },
+                    qlty: {
+                        text: "空气质量：" + cityInfo.qlty
+                    },
+                    ly: {
+                        text: '数据来源：和风天气'
+                    }
+                }],
+                rowHeight: 60,
+                separatorHidden: true,
+                selectable: false,
+                template: [{
+                        type: "label",
+                        props: {
+                            id: "name",
+                            font: $font("bold", 18),
+                            lines: 1
+                        },
+                        layout: function(make) {
+                            make.center.equalTo(0)
+                            make.top.equalTo(20)
+                        }
+                    },
+                    {
+                        type: "image",
+                        props: {
+                            id: "image",
+                            bgcolor: $rgba(100, 100, 100, 0),
+                        },
+                        layout: function(make, view) {
+                            make.left.equalTo(40)
+                            make.width.equalTo(100)
+                        }
+                    },
+                    {
+                        type: "label",
+                        props: {
+                            id: "tmp",
+                            font: $font(44),
+                            lines: 1,
+                        },
+                        layout: function(make) {
+                            make.right.equalTo(-20)
+                            make.top.equalTo(12)
+                        }
+                    },
+                    {
+                        type: "label",
+                        props: {
+                            id: "txt",
+                            font: $font(12),
+                            lines: 1,
+                        },
+                        layout: function(make) {
+                            make.left.equalTo($("name"))
+                            make.top.equalTo($("name").bottom).offset(5)
+
+                        }
+                    },
+                    {
+                        type: "label",
+                        props: {
+                            id: "qlty",
+                            font: $font(12),
+                            lines: 1,
+                        },
+                        layout: function(make) {
+                            make.left.equalTo($("txt"))
+                            make.top.equalTo($("txt").bottom).offset(5)
+                        }
+                    },
+                    {
+                        type: "label",
+                        props: {
+                            id: "ly",
+                            font: $font(8),
+                            lines: 1,
+                        },
+                        layout: function(make) {
+                            make.left.equalTo($("tmp"))
+                            make.top.equalTo($("tmp").bottom).offset(1)
+                        }
+                    },
+                ]
+            },
+            layout: $layout.fill,
+        }]
+    })
 }
-function openSafari(url) {
-  $safari.open({
-    url: url,
-    entersReader: false,
-    handler: () => {
-      $ui.clearToast();
-    }
-  });
+
+
+
+module.exports = {
+    init: init
 }
-const template = {
-  props: {
-    bgcolor: $color("clear")
-  },
-  views: [
-    {
-      type: "label",
-      props: {
-        id: "hotTitle",
-        bgcolor: $color("clear"),
-        textColor:
-          $app.env == $env.app
-            ? $device.isDarkMode
-              ? $color("white")
-              : $color("black")
-            : $device.isDarkMode == true
-            ? $color("white")
-            : $color("black"),
-        align: $align.center,
-        font: $font(13)
-      },
-      layout: function (make, view) {
-        make.right.top.bottom.inset(0);
-        make.left.inset(0);
-      }
-    },
-    {
-      type: "label",
-      props: {
-        id: "icon",
-        bgcolor: $color("clear"),
-        text: "热",
-        textColor: $color("white"),
-        radius: 2,
-        font: $font("bold", 11),
-        align: $align.center,
-        alpha: 0.8,
-        hidden: true
-      },
-      layout: function (make, view) {
-        make.right.inset(15);
-        make.width.equalTo(15);
-        make.height.equalTo(15);
-        make.centerY.equalTo();
-      },
-      events: {
-        tapped: function (sender) {}
-      }
-    }
-  ]
-};
 
 
-
-widgetInit()
+// widgetInit()
 
