@@ -12,6 +12,9 @@ Paper.js by W 3.0
 
 const language = "cn" // en or cn
 
+//  提供更多信息的附加参数，该参数是一个字符串
+const inputValue = $widget.inputValue;
+
 // 数据获取
 /*
 let resp = await $http.get({
@@ -23,21 +26,26 @@ let resp = await $http.get({
 
 let movie_data = resp.data
 
-*/
-
 const edge_type_label = {
     "en": ["Posts", "Followers", "Following"],
     "cn": ["帖子", "粉丝", "关注"]
 }
 
-// $ui.render 底层基于 UIKit 实现，
+*/
+
+// $ui.render(object) 底层基于 UIKit 实现，在画布上绘制界面
 // $widget.setTimeline 底层基于 SwiftUI 实现。
 // 具体方法是  $widget.setTimeline(object) 为桌面小组件提供时间线
 //             $widget.reloadTimeline() 手动触发时间线的刷新，是否刷新由系统决定
 //             $widget.inputValue 返回当前小组件设置的参数
 //             $widget.family 返回当前小组件的尺寸，0 ~ 3 分别表示小、中、大、超大（iPadOS 15）
-//             
-//
+//             $widget.displaySize 返回当前小组件的显示大小
+//             $widget.isDarkMode 当前小组件是否运行在深色模式下
+//             $widget.alignment 返回在视图里面会用到的 alignment 常量
+//             $widget.horizontalAlignment 返回在视图里面会用到的 horizontalAlignment 常量
+//             $widget.verticalAlignment 返回在视图里面会用到的 verticalAlignment 常量
+//             $widget.dateStyle 返回在使用时间设置 text 组件时会用到的 dateStyle 常量
+//             $env.widget 检查是否运行在桌面小组件环境
 // 尽管我们为小组件设计了类似的语法结构，但两种界面技术的差异决定了之前的知识不能完全平移过来。
 // type :指定类型，"text" 展示一段不可编辑的文本；"image" 展示一个图片；"color" ，"gradient" 实现渐变效果；"divider" 分割线；
 //                 "hstack" 横向布局；"vstack" 纵向布局；"zstack" 层叠布局； "spacer" 为布局空间增加间距；"hgrid" 横向网格；
@@ -51,89 +59,42 @@ const edge_type_label = {
 //                      scaledToFit 图片是否以拉伸并保持内容的方式放入父视图内；accessibilityHidden 图片指定 VoiceOver 是否禁用；
 // views 制定其子视图。
 $widget.setTimeline({
-        render: ctx => {
-            //$widget.family = 1
-            const family = ctx.family;
-            const width  = $widget.displaySize.width
-            const height = $widget.displaySize.height
-            let share_total = share_data.edge_owner_to_timeline_media.edges
+	render: ctx => 
+	{
+		$widget.family = 3
+		const family = ctx.family   //  定义 widget 窗口的分类
+		const width  = $widget.displaySize.width    //   定义 widget 窗口显示的宽度
+                const height = $widget.displaySize.height   //   定义 widget 窗口显示的长度
+         	let share_total = share_data.edge_owner_to_timeline_media.edges
 
-            if (random_post_max > share_total.length) random_post_max = share_total.length
+         	if (random_post_max > share_total.length) random_post_max = share_total.length
 
-            let current_share = share_total[Random(0, random_post_max - 1)].node
-            let display_url = current_share.display_url
+         	let current_share = share_total[Random(0, random_post_max - 1)].node
+         	let display_url = current_share.display_url
 
-            if (random_children_post && current_share.edge_sidecar_to_children) {
-                let children = current_share.edge_sidecar_to_children.edges
-                display_url = children[Random(0, children.length - 1)].node.display_url
-            }
-
-          
-
-            let inline_widget = {
-                type: "text",
-                props: {
-                    text: family < 5 ? share_data.full_name : counters[1],
-                    font: $font("bold", 20),
-                    light: "#282828",
-                    dark: "white",
-                    minimumScaleFactor: 0.5,
-                    lineLimit: 1
-                }
-            }
-
-            let medium_widget = {
-                type: "hstack",
-                props: {
-                    alignment: $widget.verticalAlignment.center,
-                    spacing: 7.5
-                },
-                views: [
-                    small_widget,
-                    {
-                        type: "vstack",
-                        props: {
-                            alignment: $widget.horizontalAlignment.leading,
-                            spacing: 13,
-                            frame: {
-                                width: width - height - 15,
-                                height: height
-                            },
-                            link: "https://www.instagram.com/" + instagram_url.match(/username=(.+)/)[1]
-                        },
-                        views: [
-                            rectangular_widget,
-                            {
-                                type: "text",
-                                props: {
-                                    text: share_data.biography,
-                                    font: $font(10),
-                                    light: "#282828",
-                                    dark: "white",
-                                    minimumScaleFactor: 0.5,
-                                    lineLimit: 3
-                                }
-                            },
-                            {
-                                type: "vgrid",
-                                props: {
-                                    columns: Array(counter_view.concat(type_view).length / 2).fill({
-                                        flexible: {
-                                            minimum: 10,
-                                            maximum: Infinity
-                                        }
-                                    })
-                                },
-                                views: counter_view.concat(type_view)
-                            }
-                        ]
-                    },
-                    spacerMaker(height, 0)
-                ]
-            }
-
-            // if (family == 1) return medium_widget
-            // $widget.family 返回当前小组件的尺寸，0 ~ 3 分别表示小、中、大、超大（iPadOS 15）
-            return family == 3 ? medium_widget : ""
-        }
+         	if (random_children_post && current_share.edge_sidecar_to_children) 
+		{
+          		let children = current_share.edge_sidecar_to_children.edges
+          		display_url = children[Random(0, children.length - 1)].node.display_url
+         	}
+         
+         	let Large_widget = { 
+			//  "hstack" 横向布局
+         	 	type: "hstack",
+         	 	props: {
+				id: "",
+           			title: ""
+          	},
+			views: [
+				{
+					type: "image",
+            				props: {
+             				id: "capIcon"
+					}
+					],
+					layout: (make) => {
+				make.size.equalTo($size(46, 46));
+		make.top.left.inset(27);
+		//  return ;
+	}
 })
